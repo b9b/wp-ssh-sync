@@ -1,6 +1,6 @@
 # wp-ssh-sync
 
-`wp-ssh-sync` 是一个用于开发 WordPress SSH 同步能力的 AI Skill。当前仓库提供干净的 Skill 包结构、一键安装脚本、Release 构建流程和多工具安装说明；具体同步行为应在后续开发中通过 `SKILL.md`、`scripts/`、`references/` 或 `assets/` 补充。
+`wp-ssh-sync` 是一个用于 WordPress SSH 同步的 AI Skill。它的同步能力应基于目标项目的 SSH 配置执行，适合把 WordPress 文件、内容产物或部署资产同步到远端站点。当前版本只提供基础 Skill 入口、安装方式和安全边界；具体同步动作会在后续版本通过脚本和规则补充。
 
 这个 Skill 的约束是：同步能力应基于 SSH 和目标项目配置实现，不默认引入 REST API、后台表单、浏览器自动化或其他非 SSH 回退路径。
 
@@ -17,7 +17,7 @@ wp-ssh-sync/
 └── agents/openai.yaml
 ```
 
-后续实现具体同步功能时，发布包也可以包含 `scripts/`、`references/` 或 `assets/`。
+后续版本加入具体同步能力时，发布包也可以包含 `scripts/`、`references/` 或 `assets/`。
 
 ## 一键安装
 
@@ -151,7 +151,7 @@ SSH_KEY_PATH=/Users/you/.ssh/id_ed25519
 WP_PATH=/www/wwwroot/example.com
 ```
 
-后续开发具体同步功能时，应在这里补充输入、输出、状态文件、dry-run 和真实执行命令的说明。
+后续版本加入具体同步能力时，应在这里补充输入、输出、状态文件、dry-run 和真实执行命令的说明。
 
 ## AI 工具使用示例
 
