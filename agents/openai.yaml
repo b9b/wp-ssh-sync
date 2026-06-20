@@ -1,0 +1,4 @@
+interface:
+  display_name: "WordPress SSH Sync"
+  short_description: "通过SSH执行WordPress同步流程的Skill脚手架"
+  default_prompt: "Use $wp-ssh-sync to coordinate a WordPress SSH synchronization workflow from my project configuration."

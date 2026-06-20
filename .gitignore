@@ -1,0 +1,36 @@
+# Local credentials and machine-specific config.
+.env
+.env.*
+!.env.example
+*.local
+
+# SSH keys and local connection material.
+.ssh/
+ssh-keys/
+*.pem
+*.key
+known_hosts
+
+# Python/runtime caches.
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# OS/editor noise.
+.DS_Store
+.idea/
+.vscode/
+
+# Test/runtime output.
+tests/runtime/
+runtime/
+logs/
+
+# Release artifacts generated from the clean Skill file list.
+dist/
+
+# Generic logs and temporary files.
+*.log
+*.tmp
+tmp/
