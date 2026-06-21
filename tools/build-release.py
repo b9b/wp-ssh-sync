@@ -17,6 +17,7 @@ REQUIRED_FILES = [
     "SKILL.md",
     "agents/openai.yaml",
     ".env.example",
+    ".wp-ssh-sync.ignore",
 ]
 OPTIONAL_RESOURCE_DIRS = [
     "scripts",

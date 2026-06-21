@@ -2,14 +2,17 @@
 
 这个仓库是`wp-ssh-sync`的Skill开发项目，不是最终安装目录。仓库中可以包含README、AGENT、测试、构建脚本和发布工作流；GitHub Release中的`wp-ssh-sync.zip`才是给AI工具安装的干净Skill包。
 
-当前目标是先建立从开发到发布的通用流程，不实现具体SSH同步功能。后续开发具体同步能力时，再添加`scripts/`、`references/`或`assets/`。
-
 ## 必须遵守的规则
 
 - README只写用户视角的Skill说明、安装方式、目标项目配置和AI工具使用方式，不写开发流水账。
 - AGENT记录开发、测试、发布和维护流程。
+- 在当前项目中创建的任何智能体，尽量使用中文，专用名词除外。
+- 这个Skill必须支持多种AI工具，例如Codex、Claude Code、OpenCode等。
 - 不要提交`.env`、私钥、SSH本地配置、运行日志、测试运行产物或`dist/`发布产物。
 - 真实连接凭据必须属于目标项目目录，不属于Skill安装目录。
+- 上传方式仅限`SSH`可用的同步命令，例如`sync`之类的，不允许尝试其他任何方式上传媒体。`SSH`上传失败的话，直接报错并终止。
+- 与网站的连接凭据仅允许从当前项目根目录下的`.env`里面读取，必须使用秘钥方式登录、且本地设置了头文件可以免密登录。
+- 对于宝塔面板等服务器管理面板生成的安全文件，例如防跨站的`.user.ini`等文件，要默认跳过，不要因此打断同步流程。
 - Release包必须保持干净，只包含可安装Skill所需文件，不包含测试数据、开发说明、GitHub工作流或仓库维护文件。
 - 具体SSH同步逻辑必须通过明确的Skill说明和可验证脚本逐步加入；没有实现前，不要让Skill假装可以执行真实同步。
 
@@ -18,9 +21,13 @@
 - `SKILL.md`：Skill入口，包含`name`和`description`，以及AI执行该Skill时必须遵守的核心规则。
 - `agents/openai.yaml`：Codex/OpenAI界面元数据。
 - `.env.example`：目标项目`.env`模板，不包含真实凭据。
+- `.wp-ssh-sync.ignore`：目标项目同步忽略规则模板，使用`rsync --exclude-from`语法。
 - `install.sh`：Release资产，一键安装到Codex、Claude Code、OpenCode的用户级或项目级Skill目录。
 - `tools/build-release.py`：从仓库源码构建干净发布包。
 - `.github/workflows/release.yml`：推送`v*` tag时自动创建GitHub Release并上传资产。
+- `scripts/sync-directories.sh`：面向AI工具和用户的目录同步入口，默认dry-run。
+- `scripts/sync-directories.py`：解析目标项目`.env`并调用`rsync`/`ssh`执行同步。
+- `tests/docker-sync-test.sh`：用Docker启动最小SSH容器，验证目录映射同步和`.user.ini`跳过规则。
 - `README.md`：用户使用说明。
 - `AGENT.md`：开发和发布流程。
 
@@ -48,6 +55,12 @@ python3 -B tools/build-release.py
 ```bash
 find scripts -name '*.py' -print -exec python3 -B -m py_compile {} +
 find scripts -name '*.sh' -print -exec sh -n {} \;
+```
+
+如果本机有Docker，同时执行最小化容器自动测试：
+
+```bash
+sh tests/docker-sync-test.sh
 ```
 
 如本机有`skill-creator`官方校验脚本，也运行：

@@ -1,6 +1,6 @@
 # wp-ssh-sync
 
-`wp-ssh-sync` 是一个用于 WordPress SSH 同步的 AI Skill。它的同步能力应基于目标项目的 SSH 配置执行，适合把 WordPress 文件、内容产物或部署资产同步到远端站点。当前版本只提供基础 Skill 入口、安装方式和安全边界；具体同步动作会在后续版本通过脚本和规则补充。
+`wp-ssh-sync` 是一个用于 WordPress SSH 同步的 AI Skill。它基于目标项目的 SSH 配置执行，适合把 WordPress 主题、插件、内容产物或部署资产同步到远端站点。当前版本提供目录映射同步脚本，默认只做 dry-run，显式确认后才执行真实同步。
 
 这个 Skill 的约束是：同步能力应基于 SSH 和目标项目配置实现，不默认引入 REST API、后台表单、浏览器自动化或其他非 SSH 回退路径。
 
@@ -14,10 +14,11 @@
 wp-ssh-sync/
 ├── SKILL.md
 ├── .env.example
+├── .wp-ssh-sync.ignore
 └── agents/openai.yaml
 ```
 
-后续版本加入具体同步能力时，发布包也可以包含 `scripts/`、`references/` 或 `assets/`。
+当前发布包包含 `scripts/`，用于执行 SSH/rsync 目录同步。
 
 ## 一键安装
 
@@ -149,9 +150,76 @@ SSH_PORT=22
 SSH_USER=deploy
 SSH_KEY_PATH=/Users/you/.ssh/id_ed25519
 WP_PATH=/www/wwwroot/example.com
+SYNC_MAP_1=/theme1:/theme1
+SYNC_IGNORE_FILE=.wp-ssh-sync.ignore
 ```
 
-后续版本加入具体同步能力时，应在这里补充输入、输出、状态文件、dry-run 和真实执行命令的说明。
+目录同步使用编号映射，格式是`本地目录:远端目录`。本地目录相对目标项目根目录；远端目录相对`WP_PATH`。开头的`/`只表示项目或 WordPress 根下路径，不表示本机或服务器系统根目录。如果有多个目录需要同步，继续增加编号：
+
+```bash
+SYNC_MAP_1=/theme1:/theme1
+SYNC_MAP_2=/theme2:/theme2
+SYNC_MAP_3=/plugins/my-plugin:/wp-content/plugins/my-plugin
+```
+
+`SYNC_IGNORE_FILE` 可选，未填写时默认读取项目根目录的 `.wp-ssh-sync.ignore`。
+
+## 忽略规则
+
+在目标项目根目录创建 `.wp-ssh-sync.ignore`，用于排除不应该同步到服务器的文件或目录。规则语法使用 `rsync --exclude-from`，一行一条，支持目录、文件名和通配符：
+
+```text
+node_modules/
+.git/
+.DS_Store
+*.log
+```
+
+默认模板已经包含常见排除项，例如 `node_modules/`、`.git/`、`.DS_Store`、`.env`、密钥文件、运行日志和 `.user.ini`。项目有特殊目录时，直接在目标项目的 `.wp-ssh-sync.ignore` 里继续添加。
+
+## 依赖要求
+
+执行目录同步前，本机和远端服务器都必须安装`ssh`和`rsync`。脚本会通过 SSH 调用远端的`rsync`，如果服务器缺少`rsync`会直接报错并终止。
+
+Debian 或 Ubuntu：
+
+```bash
+sudo apt update && sudo apt install -y rsync openssh-client
+```
+
+CentOS、RHEL、Rocky Linux 或 AlmaLinux：
+
+```bash
+sudo yum install -y rsync openssh-clients
+```
+
+使用 `dnf` 的系统：
+
+```bash
+sudo dnf install -y rsync openssh-clients
+```
+
+## 执行同步
+
+先在目标项目根目录执行 dry-run，确认将同步的目录和变更：
+
+```bash
+/path/to/wp-ssh-sync/scripts/sync-directories.sh --project-root /path/to/target-project
+```
+
+确认无误后再执行真实同步：
+
+```bash
+/path/to/wp-ssh-sync/scripts/sync-directories.sh --project-root /path/to/target-project --apply
+```
+
+默认不会删除远端多余文件。如需让远端目录严格跟随本地目录，额外加上`--delete`：
+
+```bash
+/path/to/wp-ssh-sync/scripts/sync-directories.sh --project-root /path/to/target-project --apply --delete
+```
+
+脚本会默认跳过宝塔等面板常见的`.user.ini`文件。所有连接信息只读取目标项目根目录的`.env`，不会读取系统环境变量里的站点凭据。
 
 ## AI 工具使用示例
 
@@ -165,11 +233,11 @@ Claude Code：
 
 ```text
 /wp-ssh-sync
-请根据当前项目的 .env 检查 WordPress SSH 同步所需配置是否齐全。暂时不要执行真实同步。
+请根据当前项目的 .env 检查 WordPress SSH 同步所需配置是否齐全，并先执行 dry-run。暂时不要执行真实同步。
 ```
 
 OpenCode：
 
 ```text
-Use the wp-ssh-sync skill to inspect the project SSH sync configuration and explain the next safe sync step.
+使用 wp-ssh-sync Skill 检查项目 SSH 同步配置，并说明下一步安全同步操作。
 ```

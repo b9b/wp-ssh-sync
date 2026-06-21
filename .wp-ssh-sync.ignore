@@ -1,0 +1,31 @@
+# wp-ssh-sync 忽略规则。
+# 语法使用 rsync 的 --exclude-from 规则，一行一条；空行和 # 注释会被忽略。
+
+# 系统和编辑器文件
+.DS_Store
+Thumbs.db
+*.swp
+*.tmp
+*.log
+
+# 版本控制和依赖目录
+.git/
+.svn/
+.hg/
+node_modules/
+vendor/bin/.phpunit/
+
+# 本地配置、密钥和运行产物
+.env
+.env.*
+.ssh/
+ssh-keys/
+*.pem
+*.key
+known_hosts
+runtime/
+logs/
+dist/
+
+# WordPress/服务器面板安全文件
+.user.ini
