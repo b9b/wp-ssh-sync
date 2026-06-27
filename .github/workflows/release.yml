@@ -26,7 +26,6 @@ jobs:
         run: |
           python3 -B -m py_compile tools/build-release.py
           if [ -d scripts ]; then
-            find scripts -name '*.py' -print -exec python3 -B -m py_compile {} +
             find scripts -name '*.sh' -print -exec sh -n {} \;
           fi
           sh -n install.sh

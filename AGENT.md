@@ -25,8 +25,7 @@
 - `install.sh`：Release资产，一键安装到Codex、Claude Code、OpenCode的用户级或项目级Skill目录。
 - `tools/build-release.py`：从仓库源码构建干净发布包。
 - `.github/workflows/release.yml`：推送`v*` tag时自动创建GitHub Release并上传资产。
-- `scripts/sync-directories.sh`：面向AI工具和用户的目录同步入口，默认dry-run。
-- `scripts/sync-directories.py`：解析目标项目`.env`并调用`rsync`/`ssh`执行同步。
+- `scripts/sync-directories.sh`：解析目标项目`.env`并调用`rsync`/`ssh`执行目录同步；默认真实同步并带`--delete --omit-dir-times`。
 - `tests/docker-sync-test.sh`：用Docker启动最小SSH容器，验证目录映射同步和`.user.ini`跳过规则。
 - `README.md`：用户使用说明。
 - `AGENT.md`：开发和发布流程。
@@ -53,7 +52,6 @@ python3 -B tools/build-release.py
 如果后续新增脚本，同时执行：
 
 ```bash
-find scripts -name '*.py' -print -exec python3 -B -m py_compile {} +
 find scripts -name '*.sh' -print -exec sh -n {} \;
 ```
 

@@ -70,10 +70,27 @@ SYNC_MAP_2=plugins/jundongweb-elementor-extensions:wp-content/plugins/jundongweb
 SYNC_MAP_3=plugins/jundongweb-acf-extensions:wp-content/plugins/jundongweb-acf-extensions
 EOF_ENV
 
-"$ROOT_DIR/scripts/sync-directories.sh" --project-root "$PROJECT_DIR"
-"$ROOT_DIR/scripts/sync-directories.sh" --project-root "$PROJECT_DIR" --apply
+DRY_RUN_LOG="$RUNTIME_DIR/dry-run.log"
+SYNC_LOG="$RUNTIME_DIR/sync.log"
+
+"$ROOT_DIR/scripts/sync-directories.sh" --project-root "$PROJECT_DIR" --dry-run > "$DRY_RUN_LOG"
+cat "$DRY_RUN_LOG"
+grep -q -- "--omit-dir-times" "$DRY_RUN_LOG"
+if docker exec "$CONTAINER_NAME" test -e /var/www/html/wp-content/themes/hello-elementor-child/style.css; then
+  echo "错误: dry-run 不应同步文件" >&2
+  exit 1
+fi
+
+docker exec "$CONTAINER_NAME" sh -c 'mkdir -p /var/www/html/wp-content/themes/hello-elementor-child && touch /var/www/html/wp-content/themes/hello-elementor-child/remote-only.txt && chown -R deploy:deploy /var/www/html'
+"$ROOT_DIR/scripts/sync-directories.sh" --project-root "$PROJECT_DIR" > "$SYNC_LOG"
+cat "$SYNC_LOG"
+grep -q -- "--omit-dir-times" "$SYNC_LOG"
 
 docker exec "$CONTAINER_NAME" test -f /var/www/html/wp-content/themes/hello-elementor-child/style.css
+if docker exec "$CONTAINER_NAME" test -e /var/www/html/wp-content/themes/hello-elementor-child/remote-only.txt; then
+  echo "错误: 默认同步应使用 --delete --omit-dir-times 删除远端多余文件" >&2
+  exit 1
+fi
 docker exec "$CONTAINER_NAME" test -f /var/www/html/wp-content/plugins/jundongweb-elementor-extensions/plugin.php
 docker exec "$CONTAINER_NAME" test -f /var/www/html/wp-content/plugins/jundongweb-acf-extensions/plugin.php
 if docker exec "$CONTAINER_NAME" test -e /var/www/html/wp-content/themes/hello-elementor-child/.user.ini; then

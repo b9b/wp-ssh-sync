@@ -1,6 +1,6 @@
 # wp-ssh-sync
 
-`wp-ssh-sync` 是一个用于 WordPress SSH 同步的 AI Skill。它基于目标项目的 SSH 配置执行，适合把 WordPress 主题、插件、内容产物或部署资产同步到远端站点。当前版本提供目录映射同步脚本，默认只做 dry-run，显式确认后才执行真实同步。
+`wp-ssh-sync` 是一个用于 WordPress SSH 同步的 AI Skill。它基于目标项目的 SSH 配置执行，适合把 WordPress 主题、插件、内容产物或部署资产同步到远端站点。当前版本提供目录映射同步脚本，使用 `rsync` over SSH；默认执行真实同步并带 `--delete --omit-dir-times`，让远端目录和本地目录保持一致，同时避免目录时间戳权限警告。
 
 这个 Skill 的约束是：同步能力应基于 SSH 和目标项目配置实现，不默认引入 REST API、后台表单、浏览器自动化或其他非 SSH 回退路径。
 
@@ -179,7 +179,13 @@ node_modules/
 
 ## 依赖要求
 
-执行目录同步前，本机和远端服务器都必须安装`ssh`和`rsync`。脚本会通过 SSH 调用远端的`rsync`，如果服务器缺少`rsync`会直接报错并终止。
+执行目录同步前，本机和远端服务器都必须安装`ssh`和`rsync`。脚本会通过 SSH 调用远端的`rsync`；如果本机缺少`rsync`，会根据当前系统提示安装命令；如果服务器缺少`rsync`，会直接报错并终止。
+
+macOS：
+
+```bash
+brew install rsync
+```
 
 Debian 或 Ubuntu：
 
@@ -199,27 +205,33 @@ sudo yum install -y rsync openssh-clients
 sudo dnf install -y rsync openssh-clients
 ```
 
+Alpine：
+
+```bash
+sudo apk add rsync openssh-client
+```
+
+Arch Linux：
+
+```bash
+sudo pacman -S --needed rsync openssh
+```
+
 ## 执行同步
 
-先在目标项目根目录执行 dry-run，确认将同步的目录和变更：
+如需预览，在目标项目根目录执行 dry-run：
+
+```bash
+/path/to/wp-ssh-sync/scripts/sync-directories.sh --project-root /path/to/target-project --dry-run
+```
+
+执行真实同步。默认会使用 `rsync --delete --omit-dir-times` 删除远端多余文件，并跳过目录时间戳同步：
 
 ```bash
 /path/to/wp-ssh-sync/scripts/sync-directories.sh --project-root /path/to/target-project
 ```
 
-确认无误后再执行真实同步：
-
-```bash
-/path/to/wp-ssh-sync/scripts/sync-directories.sh --project-root /path/to/target-project --apply
-```
-
-默认不会删除远端多余文件。如需让远端目录严格跟随本地目录，额外加上`--delete`：
-
-```bash
-/path/to/wp-ssh-sync/scripts/sync-directories.sh --project-root /path/to/target-project --apply --delete
-```
-
-脚本会默认跳过宝塔等面板常见的`.user.ini`文件。所有连接信息只读取目标项目根目录的`.env`，不会读取系统环境变量里的站点凭据。
+脚本会默认跳过宝塔等面板常见的`.user.ini`文件。所有连接信息只读取目标项目根目录的`.env`，不会读取系统环境变量里的站点凭据。请确保使用的 SSH 账号只拥有目标网站目录权限。
 
 ## AI 工具使用示例
 
@@ -233,11 +245,11 @@ Claude Code：
 
 ```text
 /wp-ssh-sync
-请根据当前项目的 .env 检查 WordPress SSH 同步所需配置是否齐全，并先执行 dry-run。暂时不要执行真实同步。
+请根据当前项目的 .env 检查 WordPress SSH 同步所需配置是否齐全，并执行同步。默认同步会删除远端多余文件。
 ```
 
 OpenCode：
 
 ```text
-使用 wp-ssh-sync Skill 检查项目 SSH 同步配置，并说明下一步安全同步操作。
+使用 wp-ssh-sync Skill 检查项目 SSH 同步配置，并执行 WordPress SSH 目录同步。
 ```
